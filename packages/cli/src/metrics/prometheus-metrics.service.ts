@@ -205,13 +205,15 @@ export class PrometheusMetricsService {
 			}
 
 			const labels = this.toLabels(event);
+			console.log('labels', labels);
 
 			const counter = new promClient.Counter({
 				name: metricName,
 				help: `Total number of ${eventName} events.`,
 				labelNames: Object.keys(labels),
 			});
-			counter.labels(labels).inc(0);
+			console.log('counter', counter);
+			//counter.labels(labels).inc(1);
 			this.counters[eventName] = counter;
 		}
 
@@ -224,7 +226,8 @@ export class PrometheusMetricsService {
 		this.eventBus.on('metrics.eventBus.event', (event: EventMessageTypes) => {
 			const counter = this.toCounter(event);
 			if (!counter) return;
-			counter.inc(1);
+			const labels = this.toLabels(event);
+			counter.inc(labels, 1);
 		});
 	}
 
