@@ -2,8 +2,6 @@ name: Docker Nightly Image CI
 run-name: Build ${{ inputs.branch }} - ${{ inputs.user }}
 
 on:
-  schedule:
-    - cron: '0 1 * * *'
   workflow_dispatch:
     inputs:
       branch:
