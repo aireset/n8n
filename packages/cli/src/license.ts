@@ -75,47 +75,52 @@ export class License {
 		const isMainInstance = instanceType === 'main';
 		const server = config.getEnv('license.serverUrl');
 		const offlineMode = !isMainInstance;
-		const autoRenewOffset = config.getEnv('license.autoRenewOffset');
-		const saveCertStr = isMainInstance
-			? async (value: TLicenseBlock) => await this.saveCertStr(value)
-			: async () => {};
-		const onFeatureChange = isMainInstance
-			? async (features: TFeatures) => await this.onFeatureChange(features)
-			: async () => {};
-		const collectUsageMetrics = isMainInstance
-			? async () => await this.licenseMetricsService.collectUsageMetrics()
-			: async () => [];
-		const collectPassthroughData = isMainInstance
-			? async () => await this.licenseMetricsService.collectPassthroughData()
-			: async () => ({});
+		// const autoRenewOffset = config.getEnv('license.autoRenewOffset');
+		// const saveCertStr = isMainInstance
+		// 	? async (value: TLicenseBlock) => await this.saveCertStr(value)
+		// 	: async () => {};
+		// const onFeatureChange = isMainInstance
+		// 	? async (features: TFeatures) => await this.onFeatureChange(features)
+		// 	: async () => {};
+		// const collectUsageMetrics = isMainInstance
+		// 	? async () => await this.licenseMetricsService.collectUsageMetrics()
+		// 	: async () => [];
+		// const collectPassthroughData = isMainInstance
+		// 	? async () => await this.licenseMetricsService.collectPassthroughData()
+		// 	: async () => ({});
+		const autoRenewOffset = false;
+		const saveCertStr = async () => {};
+		const onFeatureChange = async () => {};
+		const collectUsageMetrics = async () => [];
+		const collectPassthroughData = async () => ({});
 
 		const renewalEnabled = this.renewalEnabled();
 
-		try {
-			this.manager = new LicenseManager({
-				server,
-				tenantId: config.getEnv('license.tenantId'),
-				productIdentifier: `n8n-${N8N_VERSION}`,
-				autoRenewEnabled: renewalEnabled,
-				renewOnInit: renewalEnabled,
-				autoRenewOffset,
-				offlineMode,
-				logger: this.logger,
-				loadCertStr: async () => await this.loadCertStr(),
-				saveCertStr,
-				deviceFingerprint: () => this.instanceSettings.instanceId,
-				collectUsageMetrics,
-				collectPassthroughData,
-				onFeatureChange,
-			});
+		// try {
+		// 	this.manager = new LicenseManager({
+		// 		server,
+		// 		tenantId: config.getEnv('license.tenantId'),
+		// 		productIdentifier: `n8n-${N8N_VERSION}`,
+		// 		autoRenewEnabled: renewalEnabled,
+		// 		renewOnInit: renewalEnabled,
+		// 		autoRenewOffset,
+		// 		offlineMode,
+		// 		logger: this.logger,
+		// 		loadCertStr: async () => await this.loadCertStr(),
+		// 		saveCertStr,
+		// 		deviceFingerprint: () => this.instanceSettings.instanceId,
+		// 		collectUsageMetrics,
+		// 		collectPassthroughData,
+		// 		onFeatureChange,
+		// 	});
 
-			await this.manager.initialize();
-			this.logger.debug('License initialized');
-		} catch (error: unknown) {
-			if (error instanceof Error) {
-				this.logger.error('Could not initialize license manager sdk', { error });
-			}
-		}
+		// 	await this.manager.initialize();
+		// 	this.logger.debug('License initialized');
+		// } catch (error: unknown) {
+		// 	if (error instanceof Error) {
+		// 		this.logger.error('Could not initialize license manager sdk', { error });
+		// 	}
+		// }
 	}
 
 	async loadCertStr(): Promise<TLicenseBlock> {
@@ -232,7 +237,8 @@ export class License {
 	}
 
 	isFeatureEnabled(feature: BooleanLicenseFeature) {
-		return this.manager?.hasFeatureEnabled(feature) ?? false;
+		// return this.manager?.hasFeatureEnabled(feature) ?? false;
+		return true;
 	}
 
 	isSharingEnabled() {
@@ -376,11 +382,12 @@ export class License {
 	}
 
 	getTeamProjectLimit() {
-		return this.getFeatureValue(LICENSE_QUOTAS.TEAM_PROJECT_LIMIT) ?? 0;
+		// return this.getFeatureValue(LICENSE_QUOTAS.TEAM_PROJECT_LIMIT) ?? 0;
+		return UNLIMITED_LICENSE_QUOTA;
 	}
 
 	getPlanName(): string {
-		return this.getFeatureValue('planName') ?? 'Community';
+		return this.getFeatureValue('planName') ?? 'Enterprise';
 	}
 
 	getInfo(): string {
