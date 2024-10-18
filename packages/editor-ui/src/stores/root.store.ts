@@ -21,7 +21,7 @@ export const useRootStore = defineStore(STORES.ROOT, () => {
 		endpointWebhookTest: 'webhook-test',
 		endpointWebhookWaiting: 'webhook-waiting',
 		pushConnectionActive: true,
-		timezone: 'America/New_York',
+		timezone: 'America/Sao_Paulo',
 		executionTimeout: -1,
 		maxExecutionTimeout: Number.MAX_SAFE_INTEGER,
 		versionCli: '0.0.0',

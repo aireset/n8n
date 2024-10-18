@@ -152,7 +152,7 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 			userManagement.value.quota > useUsersStore().allUsers.length,
 	);
 
-	const isCommunityPlan = computed(() => planName.value.toLowerCase() === 'community');
+	const isCommunityPlan = computed(() => planName.value.toLowerCase() === 'enterprise');
 
 	const isDevRelease = computed(() => settings.value.releaseChannel === 'dev');
 
