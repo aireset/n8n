@@ -279,7 +279,8 @@ export abstract class BaseCommand extends Command {
 			const hasCert = (await this.license.loadCertStr()).length > 0;
 
 			if (hasCert) {
-				return this.logger.debug('Skipping license activation');
+				// return this.logger.debug('Skipping license activation');
+				this.logger.debug('Skipping license activation');
 			}
 
 			try {

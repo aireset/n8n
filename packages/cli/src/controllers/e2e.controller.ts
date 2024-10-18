@@ -100,7 +100,7 @@ export class E2EController {
 		[LICENSE_QUOTAS.VARIABLES_LIMIT]: -1,
 		[LICENSE_QUOTAS.USERS_LIMIT]: -1,
 		[LICENSE_QUOTAS.WORKFLOW_HISTORY_PRUNE_LIMIT]: -1,
-		[LICENSE_QUOTAS.TEAM_PROJECT_LIMIT]: 0,
+		[LICENSE_QUOTAS.TEAM_PROJECT_LIMIT]: -1,
 	};
 
 	constructor(
@@ -116,7 +116,7 @@ export class E2EController {
 		private readonly authUserRepository: AuthUserRepository,
 	) {
 		license.isFeatureEnabled = (feature: BooleanLicenseFeature) =>
-			this.enabledFeatures[feature] ?? false;
+			this.enabledFeatures[feature] ?? true;
 
 		// Ugly hack to satisfy biome parser
 		const getFeatureValue = <T extends keyof FeatureReturnType>(
@@ -169,7 +169,7 @@ export class E2EController {
 
 	private resetFeatures() {
 		for (const feature of Object.keys(this.enabledFeatures)) {
-			this.enabledFeatures[feature as BooleanLicenseFeature] = false;
+			this.enabledFeatures[feature as BooleanLicenseFeature] = true;
 		}
 	}
 
