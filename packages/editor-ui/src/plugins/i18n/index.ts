@@ -16,7 +16,7 @@ import {
 } from './utils';
 
 export const i18nInstance = createI18n({
-	locale: 'en',
+	locale: 'pt-BR',
 	fallbackLocale: 'en',
 	messages: { en: englishBaseText },
 });
