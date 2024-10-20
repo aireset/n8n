@@ -1,0 +1,25 @@
+name: 'Release: Publish'
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create-github-release:
+    name: Create a GitHub Release
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    timeout-minutes: 5
+
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Create a Release on GitHub
+        uses: ncipollo/release-action@v1
+        with:
+          commit: ${{github.event.pull_request.base.ref}}
+          tag: 'n8n@${{ needs.publish-to-npm.outputs.release }}'
+          prerelease: true
+          makeLatest: false
+          body: ${{github.event.pull_request.body}}
