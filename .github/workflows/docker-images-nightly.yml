@@ -1,5 +1,4 @@
-name: Docker Nightly Image CI
-run-name: Build ${{ inputs.branch }} - ${{ inputs.user }}
+name: Docker Image CI
 
 on:
   workflow_dispatch:
@@ -9,7 +8,7 @@ on:
         required: true
         default: 'master'
       tag:
-        description: 'Name of the docker tag to create.'
+        description: 'Comma-separated list of Docker tags to create.'
         required: true
         default: 'nightly'
       merge-master:
@@ -42,84 +41,107 @@ on:
 
 env:
   N8N_TAG: ${{ inputs.tag || 'nightly' }}
+  TEMP_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/n8n-temp:${{ github.run_id }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      temp_image_name: ${{ env.TEMP_IMAGE_NAME }}
 
     steps:
-      - name: Call Start URL - optionally
-        run: |
-          [[ "${{github.event.inputs.start-url}}" != "" ]] && curl -v -X POST -d 'url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}' ${{github.event.inputs.start-url}} || echo ""
-        shell: bash
-
       - name: Checkout
-        uses: actions/checkout@v4.1.1
-        with:
-          ref: ${{ github.event.inputs.branch || 'master' }}
+        uses: actions/checkout@v4
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.0.0
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3.0.0
+        uses: docker/setup-buildx-action@v3
 
-      - name: Login to DockerHub
-        if: github.event.inputs.docker-hub-push == 'true'
-        uses: docker/login-action@v3.0.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Login to GitHub Container Registry
-        if: github.event.inputs.ghcr-push == 'true'
-        uses: docker/login-action@v3.0.0
+      - name: Login to GHCR (Temporary Registry)
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Merge Master - optionally
+      - name: Build and push image to Temporary Registry
         run: |
-          [[ "${{github.event.inputs.merge-master}}" == "true" ]] && git remote add upstream https://github.com/n8n-io/n8n.git -f; git merge upstream/master --allow-unrelated-histories || echo ""
-        shell: bash
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg N8N_RELEASE_TYPE=stable \
+            --tag ${{ env.TEMP_IMAGE_NAME }} \
+            --push \
+            .
 
-      - name: Generate Docker Hub Tags
-        if: github.event.inputs.docker-hub-push == 'true'
-        id: generate_tags
-        run: |
-          TAGS=""
-          for TAG in $(echo "${{ env.N8N_TAG }}" | tr ',' '\n'); do
-            TAGS="$TAGS ${{ secrets.DOCKER_USERNAME }}/n8n:$TAG"
-          done
-          echo "tags=$TAGS" >> $GITHUB_OUTPUT
-
-      - name: Generate GHCR Tags
-        if: github.event.inputs.ghcr-push == 'true'
-        id: generate_ghcr_tags
-        run: |
-          TAGS=""
-          for TAG in $(echo "${{ env.N8N_TAG }}" | tr ',' '\n'); do
-            TAGS="$TAGS ghcr.io/${{ github.repository_owner }}/n8n:$TAG"
-          done
-          echo "tags=$TAGS" >> $GITHUB_OUTPUT
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5.1.0
+  push-to-dockerhub:
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ inputs.docker-hub-push == 'true' }}
+    steps:
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
         with:
-          context: .
-          file: ./docker/images/n8n-custom/Dockerfile
-          build-args: |
-            N8N_RELEASE_TYPE=stable
-          platforms: linux/amd64,linux/arm64
-          push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: |
-            ${{ steps.generate_tags.outputs.tags || '' }}
-            ${{ steps.generate_ghcr_tags.outputs.tags || '' }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Call Success URL - optionally
+      - name: Login to GHCR (Temporary Registry)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull image from Temporary Registry
         run: |
-          [[ "${{github.event.inputs.success-url}}" != "" ]] && curl -v ${{github.event.inputs.success-url}} || echo ""
-        shell: bash
+          docker pull ${{ needs.build.outputs.temp_image_name }}
+
+      - name: Tag and push image to DockerHub
+        run: |
+          for TAG in $(echo "${{ env.N8N_TAG }}" | tr ',' '\n'); do
+            docker tag ${{ needs.build.outputs.temp_image_name }} ${{ secrets.DOCKER_USERNAME }}/n8n:$TAG
+            docker push ${{ secrets.DOCKER_USERNAME }}/n8n:$TAG
+          done
+
+  push-to-ghcr:
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ inputs.ghcr-push == 'true' }}
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull image from Temporary Registry
+        run: |
+          docker pull ${{ needs.build.outputs.temp_image_name }}
+
+      - name: Tag and push image to GHCR
+        run: |
+          for TAG in $(echo "${{ env.N8N_TAG }}" | tr ',' '\n'); do
+            docker tag ${{ needs.build.outputs.temp_image_name }} ghcr.io/${{ github.repository_owner }}/n8n:$TAG
+            docker push ghcr.io/${{ github.repository_owner }}/n8n:$TAG
+          done
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [push-to-dockerhub, push-to-ghcr]
+    if: always()
+    steps:
+      - name: Login to GHCR (Temporary Registry)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remove Temporary Image
+        run: |
+          IMAGE_ID=$(echo "${{ env.TEMP_IMAGE_NAME }}" | sed 's/.*://')
+          gh api --method DELETE "/orgs/${{ github.repository_owner }}/packages/container/n8n-temp/versions/$IMAGE_ID" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}"
