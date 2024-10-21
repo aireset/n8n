@@ -45,6 +45,7 @@ on:
 
 env:
   N8N_TAG: ${{ inputs.tag || 'nightly' }}
+  GH_TOKEN: ${{ github.token }}
   TEMP_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/n8n-temp:${{ inputs.image-name || 'latest' }}
 
 jobs:
@@ -54,8 +55,15 @@ jobs:
       temp_image_name: ${{ env.TEMP_IMAGE_NAME }}
 
     steps:
+      - name: Call Start URL - optionally
+        run: |
+          [[ "${{github.event.inputs.start-url}}" != "" ]] && curl -v -X POST -d 'url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}' ${{github.event.inputs.start-url}} || echo ""
+        shell: bash
+
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.1.1
+        with:
+          ref: ${{ github.event.inputs.branch || 'master' }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -70,6 +78,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Merge Master - optionally
+        run: |
+          [[ "${{github.event.inputs.merge-master}}" == "true" ]] && git remote add upstream https://github.com/n8n-io/n8n.git -f; git merge upstream/master --allow-unrelated-histories || echo ""
+        shell: bash
+
       - name: Build and push image to Temporary Registry
         uses: docker/build-push-action@v5.1.0
         with:
@@ -82,6 +95,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: ${{ env.TEMP_IMAGE_NAME }}
+
+      - name: Call Success URL - optionally
+        run: |
+          [[ "${{github.event.inputs.success-url}}" != "" ]] && curl -v ${{github.event.inputs.success-url}} || echo ""
+        shell: bash
 
   push-to-dockerhub:
     runs-on: ubuntu-latest
