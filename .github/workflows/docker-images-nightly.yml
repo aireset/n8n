@@ -10,7 +10,7 @@ on:
       image-name:
         description: 'Image name.'
         required: true
-        default: 'nightly'
+        default: 'latest'
       tag:
         description: 'Comma-separated list of Docker tags to create.'
         required: true
@@ -45,7 +45,7 @@ on:
 
 env:
   N8N_TAG: ${{ inputs.tag || 'nightly' }}
-  TEMP_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/n8n-temp:${{ image-name || 'latest' }}
+  TEMP_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/n8n-temp:${{ inputs.image-name || 'latest' }}
 
 jobs:
   build:
