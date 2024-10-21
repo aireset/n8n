@@ -7,10 +7,14 @@ on:
         description: 'GitHub branch to create image off.'
         required: true
         default: 'master'
+      image-name:
+        description: 'Image name.'
+        required: true
+        default: 'nightly'
       tag:
         description: 'Comma-separated list of Docker tags to create.'
         required: true
-        default: 'nightly'
+        default: 'latest'
       merge-master:
         description: 'Merge with master.'
         type: boolean
@@ -41,7 +45,7 @@ on:
 
 env:
   N8N_TAG: ${{ inputs.tag || 'nightly' }}
-  TEMP_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/n8n-temp:${{ inputs.branch || 'latest' }}
+  TEMP_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/n8n-temp:${{ image-name || 'latest' }}
 
 jobs:
   build:
