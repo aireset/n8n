@@ -67,13 +67,17 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push image to Temporary Registry
-        run: |
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            --build-arg N8N_RELEASE_TYPE=stable \
-            --tag ${{ env.TEMP_IMAGE_NAME }} \
-            --push \
-            .
+        uses: docker/build-push-action@v5.1.0
+        with:
+          context: .
+          file: ./docker/images/n8n-custom/Dockerfile
+          build-args: |
+            N8N_RELEASE_TYPE=stable
+          platforms: linux/amd64,linux/arm64
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: ${{ env.TEMP_IMAGE_NAME }}
 
   push-to-dockerhub:
     runs-on: ubuntu-latest
