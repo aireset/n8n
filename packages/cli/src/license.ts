@@ -299,7 +299,8 @@ export class License {
 	}
 
 	isAPIDisabled() {
-		return this.isFeatureEnabled(LICENSE_FEATURES.API_DISABLED);
+		// return this.isFeatureEnabled(LICENSE_FEATURES.API_DISABLED);
+		return false;
 	}
 
 	isWorkerViewLicensed() {
