@@ -8,6 +8,7 @@ import { jsonStringify } from 'n8n-workflow';
 import pkceChallenge from 'pkce-challenge';
 import * as qs from 'querystring';
 
+import { Time } from '@/constants';
 import { Get, RestController } from '@/decorators';
 import { AuthError } from '@/errors/response-errors/auth.error';
 import { OAuthRequest } from '@/requests';
@@ -132,6 +133,10 @@ export class OAuth2CredentialController extends AbstractOAuthController {
 				const errorMessage = 'The OAuth2 callback state is invalid!';
 				this.logger.debug(errorMessage, { credentialId });
 				return this.renderCallbackError(res, errorMessage);
+			}
+
+			if (Date.now() - state.createdAt > 5 * Time.minutes.toMilliseconds) {
+				return this.renderCallbackError(res, 'The OAuth1 state expired. Please try again.');
 			}
 
 			let options: Partial<ClientOAuth2Options> = {};
