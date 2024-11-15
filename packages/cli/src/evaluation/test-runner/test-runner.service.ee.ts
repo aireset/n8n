@@ -8,6 +8,7 @@ import type { ExecutionEntity } from '@/databases/entities/execution-entity';
 import type { User } from '@/databases/entities/user';
 import type { WorkflowEntity } from '@/databases/entities/workflow-entity';
 import { ExecutionRepository } from '@/databases/repositories/execution.repository';
+import { TestRunRepository } from '@/databases/repositories/test-run.repository';
 import { WorkflowRepository } from '@/databases/repositories/workflow.repository';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
 import { TestDefinitionService } from '@/evaluation/test-definition.service.ee';
@@ -31,6 +32,7 @@ export class TestRunnerService {
 		private readonly workflowRepository: WorkflowRepository,
 		private readonly workflowRunner: WorkflowRunner,
 		private readonly executionRepository: ExecutionRepository,
+		private readonly testRunRepository: TestRunRepository,
 	) {}
 
 	/**
@@ -157,6 +159,14 @@ export class TestRunnerService {
 		const evaluationWorkflow = await this.workflowRepository.findById(test.evaluationWorkflowId);
 		assert(evaluationWorkflow, 'Evaluation workflow not found');
 
+		// 0. Create new Test Run
+		const testRun = this.testRunRepository.create({
+			testDefinitionId: test.id,
+			status: 'new',
+		});
+
+		await this.testRunRepository.save(testRun);
+
 		// 1. Make test cases from previous executions
 
 		// Select executions with the annotation tag and workflow ID of the test.
@@ -176,6 +186,12 @@ export class TestRunnerService {
 		);
 
 		// 2. Run over all the test cases
+
+		testRun.status = 'running';
+		testRun.runAt = new Date();
+		await this.testRunRepository.save(testRun);
+
+		const metrics = [];
 
 		for (const testCase of testCases) {
 			const { pinData, executionData } = testCase;
@@ -208,9 +224,17 @@ export class TestRunnerService {
 			console.log({ evalResult });
 
 			// TODO: collect metrics
+			metrics.push(evalResult);
 		}
 
 		// TODO: 3. Aggregate the results
+		// Now we just set success to true if all the test cases passed
+		const aggregatedMetrics = { success: metrics.every((metric) => metric.success) };
+
+		testRun.status = 'completed';
+		testRun.completedAt = new Date();
+		testRun.metrics = aggregatedMetrics;
+		await this.testRunRepository.save(testRun);
 
 		return { success: true };
 	}
