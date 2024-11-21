@@ -962,9 +962,8 @@ export class WorkflowDataProxy {
 				);
 			}
 			const placeholdersDataInputData =
-				that.runExecutionData?.resultData.runData[that.activeNodeName]?.[0].inputOverride?.[
-					NodeConnectionType.AiTool
-				]?.[0]?.[0].json;
+				that.runExecutionData?.resultData.runData[that.activeNodeName]?.[that.runIndex]
+					?.inputOverride?.[NodeConnectionType.AiTool]?.[0]?.[0].json;
 
 			if (Boolean(!placeholdersDataInputData)) {
 				throw new ExpressionError('No execution data available', {

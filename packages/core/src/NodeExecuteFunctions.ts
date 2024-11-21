@@ -2881,6 +2881,7 @@ export async function getInputConnectionData(
 				connectedNode.type,
 				connectedNode.typeVersion,
 			);
+			// TODO: create a new context for each runIndex
 			const context = new SupplyDataContext(
 				workflow,
 				connectedNode,

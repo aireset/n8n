@@ -14,7 +14,6 @@ import type {
 	ITaskDataConnections,
 	ITaskMetadata,
 	IWorkflowExecuteAdditionalData,
-	NodeConnectionType,
 	RelatedExecution,
 	Workflow,
 	WorkflowExecuteMode,
@@ -22,6 +21,7 @@ import type {
 import {
 	ApplicationError,
 	createDeferredPromise,
+	NodeConnectionType,
 	NodeHelpers,
 	WorkflowDataProxy,
 } from 'n8n-workflow';
@@ -62,7 +62,7 @@ export class SupplyDataContext extends NodeExecutionContext implements ISupplyDa
 		additionalData: IWorkflowExecuteAdditionalData,
 		mode: WorkflowExecuteMode,
 		private readonly runExecutionData: IRunExecutionData,
-		private readonly runIndex: number,
+		private runIndex: number,
 		private readonly connectionInputData: INodeExecutionData[],
 		private readonly inputData: ITaskDataConnections,
 		private readonly executeData: IExecuteData,
@@ -105,7 +105,7 @@ export class SupplyDataContext extends NodeExecutionContext implements ISupplyDa
 			getNodeParameter(
 				this.workflow,
 				this.runExecutionData,
-				this.runIndex,
+				this.runIndex, // how to use currentNodeRunIndex here?
 				this.connectionInputData,
 				this.node,
 				parameterName,
@@ -230,7 +230,7 @@ export class SupplyDataContext extends NodeExecutionContext implements ISupplyDa
 		);
 	}
 
-	getInputData(inputIndex = 0, inputName = 'main') {
+	getInputData(inputIndex = 0, inputName = NodeConnectionType.AiTool) {
 		if (!this.inputData.hasOwnProperty(inputName)) {
 			// Return empty array because else it would throw error when nothing is connected to input
 			return [];
@@ -314,7 +314,7 @@ export class SupplyDataContext extends NodeExecutionContext implements ISupplyDa
 		connectionType: NodeConnectionType,
 		data: INodeExecutionData[][],
 	): { index: number } {
-		const nodeName = this.getNode().name;
+		const nodeName = this.node.name;
 		let currentNodeRunIndex = 0;
 		if (this.runExecutionData.resultData.runData.hasOwnProperty(nodeName)) {
 			currentNodeRunIndex = this.runExecutionData.resultData.runData[nodeName].length;
@@ -322,22 +322,29 @@ export class SupplyDataContext extends NodeExecutionContext implements ISupplyDa
 
 		addExecutionDataFunctions(
 			'input',
-			this.node.name,
+			nodeName,
 			data,
 			this.runExecutionData,
 			connectionType,
 			this.additionalData,
-			this.node.name,
+			nodeName,
 			this.runIndex,
 			currentNodeRunIndex,
 		).catch((error) => {
 			this.logger.warn(
-				`There was a problem logging input data of node "${this.node.name}": ${
+				`There was a problem logging input data of node "${nodeName}": ${
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 					error.message
 				}`,
 			);
 		});
+
+		this.runIndex = currentNodeRunIndex;
+
+		if (!Array.isArray(this.inputData[connectionType])) {
+			this.inputData[connectionType] = [];
+		}
+		this.inputData[connectionType].push(...data);
 
 		return { index: currentNodeRunIndex };
 	}
