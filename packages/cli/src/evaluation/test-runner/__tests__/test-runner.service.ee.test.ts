@@ -21,6 +21,10 @@ const wfUnderTestJson = JSON.parse(
 	readFileSync(path.join(__dirname, './mock-data/workflow.under-test.json'), { encoding: 'utf-8' }),
 );
 
+const wfEvaluationJson = JSON.parse(
+	readFileSync(path.join(__dirname, './mock-data/workflow.evaluation.json'), { encoding: 'utf-8' }),
+);
+
 const executionDataJson = JSON.parse(
 	readFileSync(path.join(__dirname, './mock-data/execution-data.json'), { encoding: 'utf-8' }),
 );
@@ -108,6 +112,11 @@ describe('TestRunnerService', () => {
 		workflowRepository.findById.calledWith('workflow-under-test-id').mockResolvedValueOnce({
 			id: 'workflow-under-test-id',
 			...wfUnderTestJson,
+		});
+
+		workflowRepository.findById.calledWith('evaluation-workflow-id').mockResolvedValueOnce({
+			id: 'evaluation-workflow-id',
+			...wfEvaluationJson,
 		});
 
 		workflowRunner.run.mockResolvedValue('test-execution-id');
