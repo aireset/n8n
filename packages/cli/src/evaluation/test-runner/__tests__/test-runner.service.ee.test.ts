@@ -11,6 +11,7 @@ import type { ExecutionEntity } from '@/databases/entities/execution-entity';
 import type { TestDefinition } from '@/databases/entities/test-definition.ee';
 import type { User } from '@/databases/entities/user';
 import type { ExecutionRepository } from '@/databases/repositories/execution.repository';
+import type { TestRunRepository } from '@/databases/repositories/test-run.repository';
 import type { WorkflowRepository } from '@/databases/repositories/workflow.repository';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
 import type { TestDefinitionService } from '@/evaluation/test-definition.service.ee';
@@ -56,6 +57,7 @@ describe('TestRunnerService', () => {
 	const testDefinitionService = mock<TestDefinitionService>();
 	const workflowRepository = mock<WorkflowRepository>();
 	const workflowRunner = mock<WorkflowRunner>();
+	const testRunRepository = mock<TestRunRepository>();
 
 	beforeEach(() => {
 		const executionsQbMock = mockDeep<SelectQueryBuilder<ExecutionEntity>>({
@@ -95,6 +97,7 @@ describe('TestRunnerService', () => {
 			workflowRepository,
 			workflowRunner,
 			executionRepository,
+			testRunRepository,
 		);
 
 		expect(testRunnerService).toBeInstanceOf(TestRunnerService);
@@ -106,6 +109,7 @@ describe('TestRunnerService', () => {
 			workflowRepository,
 			workflowRunner,
 			executionRepository,
+			testRunRepository,
 		);
 
 		testDefinitionService.findOne.mockResolvedValueOnce(null);
@@ -121,6 +125,7 @@ describe('TestRunnerService', () => {
 			workflowRepository,
 			workflowRunner,
 			executionRepository,
+			testRunRepository,
 		);
 
 		testDefinitionService.findOne
@@ -151,6 +156,7 @@ describe('TestRunnerService', () => {
 			workflowRepository,
 			workflowRunner,
 			executionRepository,
+			testRunRepository,
 		);
 
 		testDefinitionService.findOne
