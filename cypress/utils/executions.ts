@@ -1,5 +1,5 @@
 import { stringify } from 'flatted';
-import type { IDataObject, IPinData, ITaskData, ITaskDataConnections } from 'n8n-workflow';
+import type { IDataObject, ITaskData, ITaskDataConnections } from 'n8n-workflow';
 import { nanoid } from 'nanoid';
 
 import { clickExecuteWorkflowButton } from '../composables/workflow';
@@ -37,38 +37,6 @@ export function createMockNodeExecutionData(
 			inputOverride,
 			...rest,
 		},
-	};
-}
-
-function createMockWorkflowExecutionData({
-	runData,
-	lastNodeExecuted,
-}: {
-	runData: Record<string, ITaskData | ITaskData[]>;
-	pinData?: IPinData;
-	lastNodeExecuted: string;
-}) {
-	return {
-		data: stringify({
-			startData: {},
-			resultData: {
-				runData,
-				pinData: {},
-				lastNodeExecuted,
-			},
-			executionData: {
-				contextData: {},
-				nodeExecutionStack: [],
-				metadata: {},
-				waitingExecution: {},
-				waitingExecutionSource: {},
-			},
-		}),
-		mode: 'manual',
-		startedAt: new Date().toISOString(),
-		stoppedAt: new Date().toISOString(),
-		status: 'success',
-		finished: true,
 	};
 }
 
@@ -119,24 +87,24 @@ export function runMockWorkflowExecution({
 		resolvedRunData[nodeName] = nodeExecution[nodeName];
 	});
 
-	const executionData = createMockWorkflowExecutionData({
-		lastNodeExecuted,
-		runData: resolvedRunData,
-	});
-
-	cy.intercept('GET', `/rest/executions/${executionId}`, {
-		statusCode: 200,
-		body: {
-			data: executionData,
-		},
-	}).as('getExecution');
-
 	cy.push('executionFinished', {
 		executionId,
 		workflowId,
 		status: 'success',
-		rawData: executionData.data,
+		rawData: stringify({
+			startData: {},
+			resultData: {
+				runData,
+				pinData: {},
+				lastNodeExecuted,
+			},
+			executionData: {
+				contextData: {},
+				nodeExecutionStack: [],
+				metadata: {},
+				waitingExecution: {},
+				waitingExecutionSource: {},
+			},
+		}),
 	});
-
-	cy.wait('@getExecution');
 }
