@@ -12,7 +12,7 @@ import type { TestDefinition } from '@/databases/entities/test-definition.ee';
 import type { TestRun } from '@/databases/entities/test-run.ee';
 import type { User } from '@/databases/entities/user';
 import type { ExecutionRepository } from '@/databases/repositories/execution.repository';
-import type { TestRunRepository } from '@/databases/repositories/test-run.repository';
+import type { TestRunRepository } from '@/databases/repositories/test-run.repository.ee';
 import type { WorkflowRepository } from '@/databases/repositories/workflow.repository';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
 import type { TestDefinitionService } from '@/evaluation/test-definition.service.ee';

@@ -8,7 +8,7 @@ import type { ExecutionEntity } from '@/databases/entities/execution-entity';
 import type { User } from '@/databases/entities/user';
 import type { WorkflowEntity } from '@/databases/entities/workflow-entity';
 import { ExecutionRepository } from '@/databases/repositories/execution.repository';
-import { TestRunRepository } from '@/databases/repositories/test-run.repository';
+import { TestRunRepository } from '@/databases/repositories/test-run.repository.ee';
 import { WorkflowRepository } from '@/databases/repositories/workflow.repository';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
 import { TestDefinitionService } from '@/evaluation/test-definition.service.ee';
